@@ -39,3 +39,4 @@ env.sh
 .nyc_output
 tests/env.js
 tools
+tests/network.unit.test.js
