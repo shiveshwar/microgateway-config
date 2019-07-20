@@ -40,3 +40,6 @@ env.sh
 tests/env.js
 tools
 tests/network.unit.test.js
+tests/nodir/asdf.yaml
+testthing.txt
+testthing2.txt

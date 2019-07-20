@@ -23,6 +23,66 @@ describe('default-validator module', () => {
         done();
     });
 
+
+    it('validates complete config', (done) => {
+        try {
+
+            var completeConfig = { //
+                edge_config  : {
+                    bootstrap : true,
+                    jwt_public_key : "sefs",
+                    retry_interval : 15000,
+                    refresh_interval : (3600000 + 100),
+                    proxy : "http://www.google.com",
+                    proxy_tunnel : true
+                },
+
+                oauth : {
+                    allowNoAuthorization : true,
+                    allowInvalidAuthorization : true
+                },
+
+                edgemicro : {
+                    port : 8000,
+                    logging : {
+                        level : 'error',
+                        to_console : false,
+                        dir : "hopeful",
+                    },
+                    max_connections : 99,
+                },
+
+                plugins : {
+                    sequence : []
+                },
+
+                quota : {
+                    timeUnit : 'hour',
+                    interval : 200,
+                    allow : 10
+                },
+
+                analytics : {
+                    bufferSize : 1000,
+                    flushInterval : 10,
+                    batchSize : 90
+                },
+                
+                spikearrest : {
+                    timeUnit : "minute",
+                    bufferSize : 2000,
+                    allow : 10
+                }
+            };
+            //
+            defaultValidator.validate(completeConfig);
+        } catch (err) {
+            assert.equal(err, null);
+        }
+        done();
+    });
+
+
     it('throws error for invalid quota timeunit', (done) => {
         const invalidQuotaConfig = Object.assign({}, loadedConfig, { quota: { timeUnit: 'millenia' } })
         try {
