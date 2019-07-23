@@ -502,13 +502,134 @@ describe('config - network', () => {
         }
 
         var reslt = kut.merge(config,proxies,products)
-
         assert(reslt !== null)
+
+
+        config = {
+            "a" : "b",
+            "c" : "d",
+            "edge_config" : {
+                "bootstrap" : "get bootstrap here",
+            },
+            "quota" : {
+                "qa" : "b",
+                "qc" : "d",
+                "qe" : "f",    
+            }
+        }
+
+        reslt = kut.merge(config,proxies,products)
+        assert(reslt !== null)
+
         done();
 
     })
 
+    it('maps edge proxies', done => {
+        //
+        var proxies = []
+        proxies.push({
+            'maxConnections' : 200,
+            'apiProxyName' : 'apx name',
+            'proxyEndpoint' : {
+                'name' : 'proxy 1',
+                'basePath' : "test1/2"
+            },
+            'targetEndpoint' : {
+                'name' : 'target 1',
+                'url' : 'http://www.you.are/here'
+            },
+            'a' : 'b',
+            'c' : 'd'
+        })
+        //
+        var mappedProxies = kut.mapEdgeProxies(proxies)
+        assert(mappedProxies !== null)
+        assert(true)
+        done();
+    });
 
+    ///
+    it('maps producs', done => {
+        //
+        var proxies = []
+        proxies.push({
+            'maxConnections' : 200,
+            'apiProxyName' : 'apx name',
+            'proxyEndpoint' : {
+                'name' : 'proxy 1',
+                'basePath' : "test1/2"
+            },
+            'targetEndpoint' : {
+                'name' : 'target 1',
+                'url' : 'http://www.you.are/here'
+            },
+            'a' : 'b',
+            'c' : 'd'
+        })
+        //
+        var mappedProxies = kut.mapEdgeProxies(proxies)
+        assert(mappedProxies !== null)
+        assert(true)
+        done();
+    });
+
+    ///
+    it('maps producs', done => {
+        //
+        var products = []
+        products.push({
+            'proxies' : [ 'abc', 'doreme'],
+            'environments' : ['test','clubs','subs'],
+            'name' : 'p1',
+            'apiResources' : 'test this',
+            'quota' : 100,
+            'quotaInterval' : 10,
+            'quotaTimeUnit' : 'hour',
+        })
+        //
+        var mappedProxies = kut.mapEdgeProducts(products,'test')
+        assert(mappedProxies !== null)
+        assert(true)
+        done();
+    });
+
+    it('filters products', done => {
+        //
+        var prods = [
+            { 'environments' : ['test','abc'] },
+            { 'environments' : ['test','doreme'] }
+        ]
+        var pout = kut.filteredProducts(prods,undefined)
+        assert(pout.length === 2)
+        pout = kut.filteredProducts(prods,'test')
+        assert(pout.length === 2)
+        pout = kut.filteredProducts(prods,'doreme')
+        assert(pout.length === 1)
+        //
+        done()
+    });
+
+    ///
+    it('maps producs', done => {
+        //
+        var products = []
+        products.push({
+            'proxies' : [ 'abc', 'doreme'],
+            'environments' : ['test','clubs','subs'],
+            'name' : 'p1',
+            'apiResources' : 'test this',
+            'quota' : 100,
+            'quotaInterval' : 10,
+            'quotaTimeUnit' : 'hour',
+        })
+        //
+        var mappedProxies = kut.mapEdgeProducts(products,'test')
+        assert(mappedProxies !== null)
+        assert(true)
+        done();
+    });
+    
 
     it('network module is a real entity', done => {
         try {
