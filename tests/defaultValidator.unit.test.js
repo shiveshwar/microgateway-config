@@ -1,15 +1,14 @@
 'use strict';
 
 const path = require('path');
-const fs = require('fs');
 const assert = require('assert');
 const defaultValidator = require('../lib/default-validator.js');
-const { init, load, get, save } = require('../index.js');
 const fixtureDirectory = path.join(__dirname, 'fixtures');
 const defaultOrgEnvFilename = `load-victorshaw-eval-test-config.yaml`;
 let customFixtureDirPath = path.join(fixtureDirectory, defaultOrgEnvFilename);
 // let cachedConfigFixturePath = path.join(fixtureDirectory, 'cached.yaml');
-const loadedConfig = load({ source: customFixtureDirPath });
+const config = require('../index.js');
+const loadedConfig = config.load({ source: customFixtureDirPath });
 
 
 describe('default-validator module', () => {
@@ -72,16 +71,30 @@ describe('default-validator module', () => {
                     timeUnit : "minute",
                     bufferSize : 2000,
                     allow : 10
+                },
+
+                quotas : {
+                    'hour' : {
+                        'bufferSize' : 1000
+                    }
                 }
             };
             //
             defaultValidator.validate(completeConfig);
+            
+            completeConfig.quotas = {
+                'week' : {
+                    'bufferSize' : 1000
+                }
+            }
+            defaultValidator.validate(completeConfig);
+
+
         } catch (err) {
             assert.equal(err, null);
         }
         done();
     });
-
 
     it('throws error for invalid quota timeunit', (done) => {
         const invalidQuotaConfig = Object.assign({}, loadedConfig, { quota: { timeUnit: 'millenia' } })

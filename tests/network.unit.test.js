@@ -1,3 +1,6 @@
+
+global.LoggerClass = require('./default-logger.js');     // replace global logger class for tests
+
 const path = require('path');
 const fs = require('fs');
 const assert = require('assert');
@@ -8,10 +11,11 @@ const fixtureDefaultConfig = path.join(__dirname, 'fixtures', 'default.yaml');
 const fixtureDefaultCustomConfigTester = path.join(__dirname, 'fixtures', 'default-custom-tester.yaml');
 const fixtureDefaultConfigMaxConnections = 9001;
 
-const network = require('../lib/network.js');
+const rewire = require('rewire')
+//
+const network = rewire('../lib/network.js');
 const io = require('../lib/io.js');
 const kut = require('../lib/kernel-utilities.js');
-
 
 describe('config - network', () => {
 
@@ -21,6 +25,16 @@ describe('config - network', () => {
         //if (fs.existsSync(fixtureDefaultCustomConfig)) fs.unlinkSync(fixtureDefaultCustomConfig);
         done();
     });
+
+    it('convers a default logger needed only for config continuity', done => {
+        var stoweClass = global.LoggerClass
+        global.LoggerClass = undefined 
+        var LClassTeat = require('../lib/default-logger.js');
+        var myLogger = new LClassTeat('test')  // run this once just or lines... doing this on first use only ... not dedicating a module
+        myLogger.test()
+        global.LoggerClass = stoweClass
+        done()
+    })
 
     it('uses io',done => {
 
@@ -593,7 +607,8 @@ describe('config - network', () => {
         assert(true)
         done();
     });
-
+    
+    ///
     it('filters products', done => {
         //
         var prods = [
@@ -630,7 +645,7 @@ describe('config - network', () => {
         done();
     });
     
-
+    ///
     it('network module is a real entity', done => {
         try {
             netw = network()
@@ -640,4 +655,996 @@ describe('config - network', () => {
         }
         done();
     });
+
+    ///
+    it(`loaderAddJWTSupport(config,results) throws and logs warning`, done => {
+        var loaderAddJWTSupport = network.__get__('loaderAddJWTSupport')
+        var config = {}
+        var results = [0,1,2,3]
+        var myLogger = new LoggerClass('loaderAddJWTSupport did get thrown and logs warning called :: ')
+        network.__set__('g_Logger',myLogger)
+        myLogger.setTestCB(src => {
+            assert(src === 'warn')
+        })
+        loaderAddJWTSupport(config,results)
+
+        results = [0,1,2]
+        var config = { 'oauth' : {}, 'apikeys' : {}, 'oauthv2' : {} }
+
+        loaderAddJWTSupport(config,results)
+
+        myLogger.setTestCB(src => {
+            assert(src === 'warn')
+            done()
+        })
+        loaderAddJWTSupport()
+    })
+
+    ///
+    it(`loaderAddJWTSupport(config,results) good call`, done => {
+        var loaderAddJWTSupport = network.__get__('loaderAddJWTSupport')
+        var results = [0,1,2,3]
+        var config = { 'oauth' : {}, 'apikeys' : {}, 'oauthv2' : {} }
+        var myLogger = new LoggerClass('loaderAddJWTSupport got bad parameter :: ')  // should not see this
+        network.__set__('g_Logger',myLogger)
+        myLogger.setTestCB(src => {
+            assert(false)
+            done()
+        })
+        loaderAddJWTSupport(config,results)
+        done()
+    })
+
+    ///
+    it(`loaderAddPublicKeySupport(config,results) throws and logs warning`, done => {
+        var loaderAddJWTSupport = network.__get__('loaderAddPublicKeySupport')
+        var config = {}
+        var results = [0,1,2]
+        var myLogger = new LoggerClass('loaderAddPublicKeySupport did get thrown and logs warning called :: ')
+        network.__set__('g_Logger',myLogger)
+        myLogger.setTestCB(src => {
+            assert(src === 'warn')
+        })
+        loaderAddJWTSupport(config,results)
+
+        results = [0,1]
+        var config = { 'oauth' : {}, 'apikeys' : {}, 'oauthv2' : {} }
+
+        loaderAddJWTSupport(config,results)
+
+        myLogger.setTestCB(src => {
+            assert(src === 'warn')
+            done()
+        })
+        loaderAddJWTSupport()
+    })
+
+
+    ///
+    it(`loaderAddPublicKeySupport(config,results) good call`, done => {
+        var loaderAddJWTSupport = network.__get__('loaderAddPublicKeySupport')
+        var results = [0,1,2]
+        var config = { 'oauth' : {}, 'apikeys' : {}, 'oauthv2' : {} }
+        //
+        myLogger = new LoggerClass('loaderAddPublicKeySupport got bad parameter :: ')
+        //
+        network.__set__('g_Logger',myLogger)
+        myLogger.setTestCB(src => {
+            assert(false)
+            done()
+        })
+        loaderAddJWTSupport(config,results)
+        done()
+    })
+
+    ///
+    it(`configAuthAndTLSProducts(options,config,keys,cb) lines`, done => {
+        var configAuthAndTLSProducts = network.__get__('configAuthAndTLSProducts')
+        var kut = network.__get__('kut')
+        var request = network.__get__('request')
+        //
+
+        class TestRequest {
+            constructor() {
+            }
+            get(opts,cb) {
+                var err = 'this error'
+                var response = {}
+                var body = {}
+                cb(err, response, body)
+            }
+        }
+
+        class TestKut {
+            constructor() {
+            }
+            loadStatus(str,url,err,response,body,cb) {
+                // 'products', config.edge_config.products, err, response, body, cb
+                assert(str === "products")
+                assert(cb === '() => {}')
+           }
+            enableTLS(config, opts) {
+                assert(config.edge_config !== undefined )
+            }
+        }
+
+        //
+        var testRequest = new TestRequest()
+        var testKut = new TestKut()
+        //
+        network.__set__('request',testRequest)
+        network.__set__('kut',testKut)
+        //
+        var options = {}
+        var config = { 'edge_config' : {'products' : [] }  }
+        var keys = { 'key' : '9375984375', 'secret' : 'as9f7a9d79a7f' }
+
+        configAuthAndTLSProducts(options,config,keys,'() => {}')
+        //
+        assert(true)
+        //
+        network.__set__('request',request)
+        network.__set__('kut',kut)
+
+        done()
+    })
+
+    ///
+    it(`_load(config, keys, callback) `, done => {
+        var async = network.__get__('async')
+        //
+        var bootstrapConfig = network.__get__('bootstrapConfig')
+        var configAuthAndTLSProducts = network.__get__('configAuthAndTLSProducts')
+        var configAuthJWTSinglePublicKey = network.__get__('configAuthJWTSinglePublicKey')
+        var configAuthJWTSeveralPublicKeys = network.__get__('configAuthJWTSeveralPublicKeys')
+        var loadJoinResults = network.__get__('loadJoinResults')
+
+        var myAsync = {
+            'parallel' : (list,endcb) => {
+                list.forEach( cb => { cb() } )
+                endcb()
+            }
+        }
+        network.__set__('async',myAsync)
+        network.__set__('bootstrapConfig',() => {})
+        network.__set__('configAuthAndTLSProducts',() => {})
+        network.__set__('configAuthJWTSinglePublicKey',() => {})
+        network.__set__('configAuthJWTSeveralPublicKeys',() => {})
+        network.__set__('loadJoinResults',() => {})
+        //
+        var _load = network.__get__('_load')
+        var config = {
+            'edge_config' : {
+                'proxy' : 'skhskjfh',
+                'proxy_tunnel' : 'oerutosiutr',
+                'proxyPattern' : 'osiufosfsd'
+            }
+        }
+        //
+        _load(config, 'keys', 'callback')
+        //
+        network.__set__('bootstrapConfig',bootstrapConfig)
+        network.__set__('configAuthAndTLSProducts',configAuthAndTLSProducts)
+        network.__set__('configAuthJWTSinglePublicKey',configAuthJWTSinglePublicKey)
+        network.__set__('configAuthJWTSeveralPublicKeys',configAuthJWTSeveralPublicKeys)
+        network.__set__('loadJoinResults',loadJoinResults)
+        network.__set__('async',async)
+        done()
+    })
+
+
+
+    ///
+    it(`loadJoinResults  gets error`, done => {
+        //
+        var loadJoinResults = network.__get__('loadJoinResults')
+        var myLogger = new LoggerClass('loadJoinResults got bad parameter :: ')  // should not see this
+        network.__set__('g_Logger',myLogger)
+        myLogger.setTestCB(src => {
+            assert(src === 'warn')
+        })
+        var callback = (err) => {
+            assert('junk' === err)
+            done()
+        }
+        var results = [0,1,2,3,4,5]
+        loadJoinResults('junk',results,null,null,callback)
+    })
+
+    ///
+    it(`loaderUnloadProxyInfo  line coverage`, done => {
+        //
+        var loaderUnloadProxyInfo = network.__get__('loaderUnloadProxyInfo')
+        var myLogger = new LoggerClass('loaderUnloadProxyInfo got bad parameter :: ')  // should not see this
+        network.__set__('g_Logger',myLogger)
+        network.__set__('gProxyPattern','this is a test')
+        //
+        var kut = network.__get__('kut')
+        //
+        class TestKut {
+            constructor() {
+            }
+            
+            matchWildcard(pname, pattern) {
+                return(true)
+            }
+
+        }
+
+        var testKut = new TestKut()
+        //
+        network.__set__('kut',testKut)
+
+        // 
+        var proxyInfo = {
+            "apiProxies" : [
+                {
+                    'targetEndpoint' : {
+                        'url' : 'this is a test'
+                    },
+                    'apiProxyName' : "P1"
+                },
+                {
+                    'targetEndpoint' : {
+                        'url' : 'this is a test'
+                    },
+                    'apiProxyName' : "P2"
+                }
+            ]
+        }
+        //
+        myLogger.setTestCB(src => {
+            assert(src === 'warn')
+        })
+       
+        var results = [JSON.stringify(proxyInfo)]
+        //
+        loaderUnloadProxyInfo(results)
+        //
+        network.__set__('kut',kut)
+
+
+        loaderUnloadProxyInfo([])
+        //
+        done()
+        //
+    })
+
+    ///
+    it(`loaderUnloadProductInfo  line coverage`, done => {
+        //
+        var loaderUnloadProductInfo = network.__get__('loaderUnloadProductInfo')
+        var myLogger = new LoggerClass('loaderUnloadProductInfo got bad parameter :: ')  // should not see this
+        network.__set__('g_Logger',myLogger)
+        //
+        myLogger.setTestCB(src => {
+            assert(src === 'warn')
+        })
+        loaderUnloadProductInfo([])
+        // // // // // // // // // // 
+        var productInfo = {
+            "apiProduct" : [ 1,2,3]
+        }
+        //
+        var results = [0,JSON.stringify(productInfo)]
+        loaderUnloadProductInfo(results)
+
+        myLogger.setTestCB(src => {
+            assert(src === 'error')
+        })
+        try {
+            results = [0,"{OIKPSDJF{.djfi[]2"]
+            loaderUnloadProductInfo(results)
+            assert(false)
+        } catch (e) {
+            assert(true)
+        }
+        done()
+    })
+
+
+    ///
+    it(`bootstrapConfig(options,config,keys,cb) lines`, done => {
+        var bootstrapConfig = network.__get__('bootstrapConfig')
+        var kut = network.__get__('kut')
+        var request = network.__get__('request')
+        //
+
+        class TestRequest {
+            constructor() {
+            }
+            get(opts,cb) {
+                var err = 'this error'
+                var response = {}
+                var body = {}
+                cb(err, response, body)
+            }
+        }
+
+        class TestKut {
+            constructor() {
+            }
+            loadStatus(str,url,err,response,body,cb) {
+                // 'products', config.edge_config.products, err, response, body, cb
+                assert(str === "config")
+                assert(cb === '() => {}')
+           }
+            enableTLS(config, opts) {
+                assert(config.edge_config !== undefined )
+            }
+        }
+
+        //
+        var testRequest = new TestRequest()
+        var testKut = new TestKut()
+        //
+        network.__set__('request',testRequest)
+        network.__set__('kut',testKut)
+        //
+        var options = {}
+        var config = {
+            'edge_config' : {
+                'bootstrap' : 'ueiroerueoir-url'
+            },
+            'proxies' : [{
+                'revision' : "343",
+                'revision' : 'sdhf;',
+                'url' : 'slfjsdof'
+            }]
+        }
+        var keys = { 'key' : '9375984375', 'secret' : 'as9f7a9d79a7f' }
+        //
+        process.env.EDGEMICRO_LOCAL_PROXY = "1"
+        bootstrapConfig(options,config,keys,'() => {}')
+        //
+        process.env.EDGEMICRO_LOCAL_PROXY = "0"
+        bootstrapConfig(options,config,keys,'() => {}')
+        //
+        assert(true)
+        //
+        network.__set__('request',request)
+        network.__set__('kut',kut)
+
+        done()
+    })
+
+    ///
+    it(`networkLoadCallback(err, proxies, products, keys, config, callback) lines`, done => {
+        var networkLoadCallback = network.__get__('networkLoadCallback')
+        var kut = network.__get__('kut')
+        var request = network.__get__('request')
+        var ioLib_back = network.__get__('ioLib')
+        var proxy_validator = network.__get__('proxy_validator')
+        //
+        var myLogger = new LoggerClass('networkLoadCallback lines :: ')  // should not see this
+        network.__set__('g_Logger',myLogger)
+        //
+
+        class TestRequest {
+            constructor() {
+            }
+            get(opts,cb) {
+                var err = 'this error'
+                var response = {}
+                var body = {}
+                cb(err, response, body)
+            }
+        }
+
+        class TestKut {
+            constructor() {
+            }
+            loadStatus(str,url,err,response,body,cb) {
+                // 'products', config.edge_config.products, err, response, body, cb
+                assert(str === "config")
+                assert(cb === '() => {}')
+           }
+            enableTLS(config, opts) {
+                assert(config.edge_config !== undefined )
+            }
+
+            mergeKeys(mergedConfig, keys) {
+                //
+            }
+
+            mapEdgeProxies(a) {
+                return(1)
+            }
+
+            mapEdgeProducts(a,b) {
+                return(2)
+            }
+
+
+            merge(a,b,c) {
+
+            }
+        }
+
+
+        var iolib = () => {
+            return(new TestIoLib())
+        }
+
+        class TestIoLib {
+            constructor() {}
+            loadSync(object) {
+                return("this is a test too")
+            }
+        }
+
+        class TestIoLib2 {
+            constructor() {}
+            loadSync(object) {
+                return(null)
+            }
+        }
+        //
+        var testRequest = new TestRequest()
+        var testKut = new TestKut()
+        //
+        network.__set__('request',testRequest)
+        network.__set__('kut',testKut)
+        network.__set__('ioLib',iolib)
+
+        var etest = "this is a test"
+        var callback = (err) => {
+            assert(err === etest)
+        }
+
+        //(err, proxies, products, keys, config, callback)
+        networkLoadCallback(etest, null, null, null, null, callback)
+
+        callback = (err,data) => {
+            assert(err === null)
+            assert(data === "this is a test too")
+        }
+        networkLoadCallback(null, null, null, null, null, callback)
+        //
+
+        iolib = () => {
+            return(new TestIoLib2())
+        }
+        network.__set__('ioLib',iolib)
+
+        callback = (err,data) => {
+            assert(err !== null)
+        }
+        networkLoadCallback(null, null, null, null, null, callback)
+
+
+
+        class proxyValidator {
+            constructor() {}
+            validate(something) {
+                //
+            }
+        }
+
+
+        var config = {
+            'edgemicro' : {
+                "proxies" : ['t1','t2']
+            },
+            'oauth' : {
+                'productOnly' : false
+            }
+        }
+
+        var proxies = [{
+            'apiProxyName' : 't1',
+            'revision' : "343",
+            'revision' : 'sdhf;',
+            'url' : 'slfjsdof'
+        },
+        {
+            'apiProxyName' : 't2',
+            'revision' : "343",
+            'revision' : 'sdhf;',
+            'url' : 'slfjsdof'
+        }]
+        var products = [{"proxies" : ['t1','t2']},{"proxies" : ['t1','t2']}]
+            
+        var keys = []
+
+        network.__set__('proxy_validator',new proxyValidator())
+
+        callback = () => {}
+
+        networkLoadCallback(null,  proxies, products, keys, config, callback)
+        // networkLoadCallback
+
+
+        // environment variable check
+        process.env.EDGEMICRO_DECORATOR  = true
+        proxies = [{
+            'apiProxyName' : 't1',
+            'revision' : "343",
+            'revision' : 'sdhf;',
+            'url' : 'slfjsdof',
+            'proxyEndpoint' : {}
+        }]
+
+        networkLoadCallback(null,  proxies, products, keys, config, callback)
+        //
+        
+        network.__set__('request',request)
+        network.__set__('kut',kut)
+        network.__set__('ioLib',ioLib_back)
+        network.__set__('proxy_validator',proxy_validator)
+
+
+        done()
+
+    })
+
+
+    it('it runs load config', done => {
+        var loadConfiguration = network.__get__('loadConfiguration')
+        var kut = network.__get__('kut')
+        var default_config_validator = network.__get__('default_config_validator')
+        var loader = network.__get__('_load')
+        var proxy_validator = network.__get__('proxy_validator')
+
+        //
+        var myLogger = new LoggerClass('loadConfiguration lines :: ')  // should not see this
+        network.__set__('g_Logger',myLogger)
+        //
+
+        var vReturnError = false;
+
+        var config = {
+            'edgemicro' : {
+                "proxies" : ['t1','t2']
+            },
+            'oauth' : {
+                'productOnly' : false
+            }
+        }
+
+
+        class TestKut {
+            constructor() {
+            }
+            loadStatus(str,url,err,response,body,cb) {
+                // 'products', config.edge_config.products, err, response, body, cb
+                assert(str === "config")
+                assert(cb === '() => {}')
+           }
+            enableTLS(config, opts) {
+                assert(config.edge_config !== undefined )
+            }
+
+            mergeKeys(mergedConfig, keys) {
+                //
+            }
+
+            mapEdgeProxies(a) {
+                return(1)
+            }
+
+            mapEdgeProducts(a,b) {
+                return(2)
+            }
+
+
+            merge(a,b,c) {
+
+            }
+
+            validateUrls() {
+                if ( vReturnError ) {
+                    return("got an error")
+                }
+                return(false)
+            }
+
+            mergeDefaults() {
+                return(config)
+            }
+        }
+
+        //
+        var testKut = new TestKut()
+        //
+        network.__set__('kut',testKut)
+
+
+        class TestDefaultValidator {
+            constructor() {
+
+            }
+
+            validate() {
+                return(true)
+            }
+        }
+
+
+
+        class proxyValidator {
+            constructor() {}
+            validate(something) {
+                //
+            }
+        }
+
+
+        network.__set__('proxy_validator',new proxyValidator())
+        network.__set__('default_config_validator',new TestDefaultValidator())
+        
+        var proxies = [{
+            'apiProxyName' : 't1',
+            'revision' : "343",
+            'revision' : 'sdhf;',
+            'url' : 'slfjsdof'
+        },
+        {
+            'apiProxyName' : 't2',
+            'revision' : "343",
+            'revision' : 'sdhf;',
+            'url' : 'slfjsdof'
+        }]
+        var products = [{"proxies" : ['t1','t2']},{"proxies" : ['t1','t2']}]
+            
+        var keys = []
+
+
+
+        network.__set__('_load',(config,keys,cb) => {
+            cb(null, proxies, products)
+        })
+
+
+        callback = (err) => {
+            console.log(err)
+            assert(err === null)
+        }
+        //
+        loadConfiguration(config, keys, callback)
+
+        //
+        vReturnError = true;
+
+
+        network.__set__('_load',(config,keys,cb) => {
+            cb("got an error", proxies, products)
+        })
+
+        callback = (err) => {
+            console.log(err)
+            assert(err === "got an error")
+        }
+        //
+        loadConfiguration(config, keys, callback)
+        
+        network.__set__('kut',kut)
+        network.__set__('default_config_validator',default_config_validator)
+        network.__set__('_load',loader)
+        network.__set__('proxy_validator',proxy_validator)
+        //
+        done()
+    })
+
+
+    ///
+    it(`configAuthJWTSeveralPublicKeys(options,config,cb) lines`, done => {
+        var configAuthJWTSeveralPublicKeys = network.__get__('configAuthJWTSeveralPublicKeys')
+        var kut = network.__get__('kut')
+        var request = network.__get__('request')
+        //
+
+        class TestRequest {
+            constructor() {
+            }
+            get(opts,cb) {
+                var err = null
+                var response = { 'statusCode' : 200 }
+                var body = {}
+                cb(err, response, body)
+            }
+        }
+
+        class TestKut {
+            constructor() {
+            }
+            loadStatus(str,url,err,response,body,cb) {
+                assert('jwk_public_keys' === str)
+            }
+            enableTLS(config, opts) {
+                assert(config.edge_config !== undefined )
+                return(opts)
+            }
+        }
+
+        //
+        var testRequest = new TestRequest()
+        var testKut = new TestKut()
+        //
+        network.__set__('request',testRequest)
+        network.__set__('kut',testKut)
+        //
+        var options = { 
+            'url' : "test"
+        }
+        var config = { 'edge_config' : {'products' : [] }  }
+        var keys = { 'key' : '9375984375', 'secret' : 'as9f7a9d79a7f' }
+
+        configAuthJWTSeveralPublicKeys(options,config,callback)
+        //
+        assert(true)
+        //
+        network.__set__('request',request)
+        network.__set__('kut',kut)
+        network.__set__('configAuthJWTSeveralPublicKeys',configAuthJWTSeveralPublicKeys)
+
+        done()
+    })
+
+    ///
+    it(`configAuthJWTSinglePublicKey(options,config,cb) lines`, done => {
+        var configAuthJWTSinglePublicKey = network.__get__('configAuthJWTSinglePublicKey')
+        var kut = network.__get__('kut')
+        var request = network.__get__('request')
+        //
+
+        class TestRequest {
+            constructor() {
+            }
+            get(opts,cb) {
+                var err = null
+                var response = { 'statusCode' : 200 }
+                var body = {}
+                cb(err, response, body)
+            }
+        }
+
+        class TestKut {
+            constructor() {
+            }
+            loadStatus(str,url,err,response,body,cb) {
+                assert('jwt_public_key' === str)
+            }
+            enableTLS(config, opts) {
+                assert(config.edge_config !== undefined )
+                return(opts)
+            }
+        }
+
+        //
+        var testRequest = new TestRequest()
+        var testKut = new TestKut()
+        //
+        network.__set__('request',testRequest)
+        network.__set__('kut',testKut)
+        //
+        var options = { 
+            'url' : "test"
+        }
+        var config = { 'edge_config' : {'products' : [] }  }
+        var keys = { 'key' : '9375984375', 'secret' : 'as9f7a9d79a7f' }
+
+        configAuthJWTSinglePublicKey(options,config,callback)
+        //
+        assert(true)
+        //
+        network.__set__('request',request)
+        network.__set__('kut',kut)
+        network.__set__('configAuthJWTSinglePublicKey',configAuthJWTSinglePublicKey)
+
+        done()
+    })
+
+    ///
+    it('calls get off of newtwork object', done => {
+        try {
+            //
+            var networkLoadCallback = network.__get__('networkLoadCallback')
+            var kut = network.__get__('kut')
+            var request = network.__get__('request')
+            var ioLib_back = network.__get__('ioLib')
+            var proxy_validator = network.__get__('proxy_validator')
+            var default_config_validator = network.__get__('default_config_validator')
+
+            var loadConfiguration = network.__get__('loadConfiguration')
+
+            //loadConfiguration(this.config, keys, callback);
+
+            //
+            var myLogger = new LoggerClass('networkLoadCallback lines :: ')  // should not see this
+            network.__set__('g_Logger',myLogger)
+            //
+            var config = {
+                'edgemicro' : {
+                    "proxies" : ['t1','t2']
+                },
+                'oauth' : {
+                    'productOnly' : false
+                }
+            }
+    
+            var proxies = [{
+                'apiProxyName' : 't1',
+                'revision' : "343",
+                'revision' : 'sdhf;',
+                'url' : 'slfjsdof'
+            },
+            {
+                'apiProxyName' : 't2',
+                'revision' : "343",
+                'revision' : 'sdhf;',
+                'url' : 'slfjsdof'
+            }]
+            var products = [{"proxies" : ['t1','t2']},{"proxies" : ['t1','t2']}]
+                
+            var keys = []
+            //
+            var testSource = 'sldijfsdlfsdl' 
+            //
+    
+            class TestRequest {
+                constructor() {
+                }
+                get(opts,caller,cb) {
+                    var err = null
+                    var response = {
+                        'statusCode' : 200
+                    }
+                    var body = {}
+                    cb(err, response, body)
+                }
+            }
+    
+            class TestKut {
+                constructor() {
+                }
+
+                loadSync(obj) {
+                    // this is a test
+
+                }
+
+                getDefaultProxy(proxies, config, options) {
+                    //
+                    return({ 'test' : 'proxy' })
+                }
+
+                validateUrls() {
+
+                }
+
+                writeConfig(source,body) {
+                    assert(testSource === source)
+                }
+
+                loadStatus(str,url,err,response,body,cb) {
+                    // 'products', config.edge_config.products, err, response, body, cb
+                    assert(str === "config")
+                    assert(cb === '() => {}')
+               }
+                enableTLS(config, opts) {
+                    assert(config.edge_config !== undefined )
+                }
+    
+                mergeKeys(mergedConfig, keys) {
+                    //
+                }
+    
+                mapEdgeProxies(a) {
+                    return(1)
+                }
+    
+                mapEdgeProducts(a,b) {
+                    return(2)
+                }
+    
+    
+                merge(a,b,c) {
+    
+                }
+            }
+    
+
+            class TestDefaultValidator {
+                constructor() {
+    
+                }
+    
+                validate() {
+                    return(true)
+                }
+            }
+    
+    
+            var iolib = () => {
+                return(new TestIoLib())
+            }
+    
+            class TestIoLib {
+                constructor() {}
+                loadSync(object) {
+                    return({})
+                }
+            }
+            //
+            var testRequest = new TestRequest()
+            var testKut = new TestKut()
+            //
+            network.__set__('request',testRequest)
+            network.__set__('kut',testKut)
+            network.__set__('ioLib',iolib)
+    
+    
+            class proxyValidator {
+                constructor() {}
+                validate(something) {
+                    //
+                }
+            }
+            //
+            network.__set__('proxy_validator',new proxyValidator())
+            network.__set__('default_config_validator',new TestDefaultValidator())
+
+            callback = () => {}
+            networkLoadCallback(null,  proxies, products, keys, config, callback)
+            // networkLoadCallback
+                proxies = [{
+                'apiProxyName' : 't1',
+                'revision' : "343",
+                'revision' : 'sdhf;',
+                'url' : 'slfjsdof',
+                'proxyEndpoint' : {}
+            }]
+
+            //
+            var options = {
+                'keys' : {
+                    'key' : 'woturostuweroiu',
+                    'secret' : 'akdaskjd'
+                },
+                'source' : testSource
+            }
+            var callback = () => {}
+
+
+
+            netw = network(new TestIoLib())
+            assert(true)
+
+
+            process.env.EDGEMICRO_LOCAL = "1"   // first branch
+            netw.get(options,callback)
+            //
+
+            var TestLoadConfiguration = (config, keys, callback) => {
+
+            }
+
+            network.__set__('loadConfiguration',TestLoadConfiguration)
+     
+
+            process.env.EDGEMICRO_LOCAL = false  // first branch
+            netw.get(options,callback)
+ 
+            options.configurl = "sfsojfso"
+            netw.get(options,callback)
+
+
+
+        } catch(e) {
+            console.log(e)
+            assert(false)
+        }
+
+        //
+        network.__set__('request',request)
+        network.__set__('kut',kut)
+        network.__set__('ioLib',ioLib_back)
+        network.__set__('proxy_validator',proxy_validator)
+        network.__set__('default_config_validator',default_config_validator)
+        network.__set__('loadConfiguration',loadConfiguration)
+        //
+        done();
+    });
+
 })
