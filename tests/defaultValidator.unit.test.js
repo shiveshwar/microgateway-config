@@ -1,15 +1,14 @@
 'use strict';
 
 const path = require('path');
-const fs = require('fs');
 const assert = require('assert');
 const defaultValidator = require('../lib/default-validator.js');
-const { init, load, get, save } = require('../index.js');
 const fixtureDirectory = path.join(__dirname, 'fixtures');
 const defaultOrgEnvFilename = `load-victorshaw-eval-test-config.yaml`;
 let customFixtureDirPath = path.join(fixtureDirectory, defaultOrgEnvFilename);
 // let cachedConfigFixturePath = path.join(fixtureDirectory, 'cached.yaml');
-const loadedConfig = load({ source: customFixtureDirPath });
+const config = require('../index.js');
+const loadedConfig = config.load({ source: customFixtureDirPath });
 
 
 describe('default-validator module', () => {
@@ -17,6 +16,80 @@ describe('default-validator module', () => {
     it('validates config', (done) => {
         try {
             defaultValidator.validate(loadedConfig);
+        } catch (err) {
+            assert.equal(err, null);
+        }
+        done();
+    });
+
+
+    it('validates complete config', (done) => {
+        try {
+
+            var completeConfig = { //
+                edge_config  : {
+                    bootstrap : true,
+                    jwt_public_key : "sefs",
+                    retry_interval : 15000,
+                    refresh_interval : (3600000 + 100),
+                    proxy : "http://www.google.com",
+                    proxy_tunnel : true
+                },
+
+                oauth : {
+                    allowNoAuthorization : true,
+                    allowInvalidAuthorization : true
+                },
+
+                edgemicro : {
+                    port : 8000,
+                    logging : {
+                        level : 'error',
+                        to_console : false,
+                        dir : "hopeful",
+                    },
+                    max_connections : 99,
+                },
+
+                plugins : {
+                    sequence : []
+                },
+
+                quota : {
+                    timeUnit : 'hour',
+                    interval : 200,
+                    allow : 10
+                },
+
+                analytics : {
+                    bufferSize : 1000,
+                    flushInterval : 10,
+                    batchSize : 90
+                },
+                
+                spikearrest : {
+                    timeUnit : "minute",
+                    bufferSize : 2000,
+                    allow : 10
+                },
+
+                quotas : {
+                    'hour' : {
+                        'bufferSize' : 1000
+                    }
+                }
+            };
+            //
+            defaultValidator.validate(completeConfig);
+            
+            completeConfig.quotas = {
+                'week' : {
+                    'bufferSize' : 1000
+                }
+            }
+            defaultValidator.validate(completeConfig);
+
+
         } catch (err) {
             assert.equal(err, null);
         }

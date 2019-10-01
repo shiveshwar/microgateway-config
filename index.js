@@ -1,4 +1,6 @@
 'use strict';
+// 
+global.LoggerClass = require('./lib/default-logger.js');
 
 var io = require('./lib/io');
 var network = require('./lib/network');

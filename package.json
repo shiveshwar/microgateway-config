@@ -1,6 +1,10 @@
 {
   "name": "microgateway-config",
+<<<<<<< HEAD
   "version": "3.0.6",
+=======
+  "version": "3.0.7",
+>>>>>>> leddy/master
   "description": "Apigee Microgateway Handler",
   "main": "index.js",
   "license": "Apache-2.0",
@@ -21,18 +25,33 @@
     "resolve": "^1.8.1"
   },
   "scripts": {
+<<<<<<< HEAD
     "lint": "eslint  ./lib index.js",
     "test": "nyc mocha tests/*.unit.test.js  --timeout 10000",
+=======
+    "test": "bash runtests.sh",
+>>>>>>> leddy/master
     "test:unit": "nyc mocha tests/*.unit.test.js  --timeout 10000",
     "test:integration": "nyc mocha tests/*.integration.test.js --timeout 60000"
   },
+  "nyc": {
+      "exclude": "tests/*.js"
+  },
   "devDependencies": {
     "chai": "^2.3.0",
+<<<<<<< HEAD
     "eslint": "^6.1.0",
     "eslint-config-google": "^0.13.0",
     "mocha": "^5.2.0",
     "nyc": "^14.1.1",
     "proxyquire": "^1.7.10",
     "jshint-stylish": "^2.2.1"
+=======
+    "jshint-stylish": "^2.2.1",
+    "mocha": "^5.2.0",
+    "nyc": "^14.1.1",
+    "proxyquire": "^1.7.10",
+    "rewire": "^4.0.1"
+>>>>>>> leddy/master
   }
 }

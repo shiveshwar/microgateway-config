@@ -39,3 +39,7 @@ env.sh
 .nyc_output
 tests/env.js
 tools
+tests/nodir/asdf.yaml
+testthing.txt
+testthing2.txt
+checkup.txt

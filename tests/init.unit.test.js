@@ -2,7 +2,8 @@ const path = require('path');
 const fs = require('fs');
 const assert = require('assert');
 const jsyaml = require('js-yaml');
-const { init } = require('../index.js');
+const config = require('../index.js');
+//
 const fixtureDirectory = path.join(__dirname, 'fixtures');
 const fixtureDefaultConfig = path.join(__dirname, 'fixtures', 'default.yaml');
 const fixtureDefaultCustomConfig = path.join(__dirname, 'fixtures', 'default-custom.yaml');
@@ -16,7 +17,7 @@ describe('config - init', () => {
     });
 
     it('initializes custom default source config to custom directory', done => {
-        init({
+        config.init({
             source: fixtureDefaultConfig,
             targetDir: fixtureDirectory,
             targetFile: 'default-custom.yaml',
@@ -29,4 +30,19 @@ describe('config - init', () => {
             done();
         });
     });
+
+    it('initializes the logger',done => {
+        var Deflogger = require('../lib/default-logger')
+        test_configLogger = (level,object,msg) => {
+
+        }
+
+        global.G_configLogger = test_configLogger
+        var testLogger = new Deflogger('test')
+        testLogger.test()
+        global.G_configLogger = undefined
+        testLogger.test()
+        done()
+    })
+
 })
